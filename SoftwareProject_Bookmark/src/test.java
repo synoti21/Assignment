@@ -17,8 +17,8 @@ class Bookmark{
     private String memo= "";
 
     //validity check
-    String timeValidPattern = "^2\\d\\d\\d-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])_([0-1][0-9]|2[0-3]):[0-5][0-9]$"; //checks the formats of created time
-    String urlValidPattern = "^http://\\w*$";
+    public String timeValidPattern = "^2\\d\\d\\d-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])_([0-1][0-9]|2[0-3]):[0-5][0-9]$"; //checks the formats of created time
+    public String urlValidPattern = "^http://\\w*$";
 
 
     //constructor
@@ -67,15 +67,62 @@ class BookmarkList{
 
 }
 
+//class that reads file and makes bookmark and bookmark list
 class FileReader{
+    LineChecker lineChecker = new LineChecker();
     void lineParser(String str){
-        ArrayList<String> pstr = new ArrayList<String>();
-        StringTokenizer st1 = new StringTokenizer(str, ",;");
-        while(st1.hasMoreTokens()){
-            pstr.add(st1.nextToken());
+        String[] tempBookmark = str.split(";,");
+        if(lineChecker.validityCheck(tempBookmark) == 1){
+            //make bookmark
         }
 
+
+        //checking process
+
+
     }
+}
+
+//class that checks validity of each line by using url pattern, and time pattern
+class LineChecker{
+    class PatternChecker{
+        public int urlCheck(String str){
+            if(str.matches()){
+                return 1;
+            }else{
+                return 0;
+            }
+        }
+        public int timeCheck(String str){
+            if(){
+                return 1;
+            }else{
+                return 0;
+            }
+        }
+    }
+    int validityCheck(String[] str){ // checks each line if it satisfies Bookmark condition
+        PatternChecker patternChecker = new PatternChecker();
+        if(patternChecker.urlCheck(str[0]) == 1){
+            if(patternChecker.timeCheck(str[1]) == 1){ //if all conditions are satisfied (url, time)
+                //make Bookmark and bookmark list with groupname and memo
+            }else{ //if time pattern is invalid, then it's invalid
+                System.out.println("invalid input");
+            }
+        }else{ //it could be name, so check the next token
+            if(patternChecker.urlCheck(str[0])==1){
+                if(patternChecker.timeCheck(str[1]) == 1){
+                    //make Bookmark and Bookmark list with groupname and memo
+                }else{ //invalid
+                    System.out.println("invalid input");
+                }
+            }else{ //invalid
+                System.out.println("invalid input");
+            }
+        }
+        //checking process
+    }
+
 
 }
 
@@ -85,7 +132,7 @@ class Test{
         Bookmark bookmark = new Bookmark("http://asdf");
         bookmark.print();
 
-        File file = new File("af.txt");
+        File file = new File("/Users/jasonahn/IdeaProjects/SoftwareProject_BookMark/src/af.txt");
         FileReader filereader = new FileReader();
 
         try{

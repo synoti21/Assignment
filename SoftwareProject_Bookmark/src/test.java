@@ -12,9 +12,9 @@ class Bookmark{
     public String createdTime= "";
 
     //unnecessary
-    private String bookMarkName = "";
-    private String groupName= "";
-    private String memo= "";
+    public String bookMarkName = "";
+    public String groupName= "";
+    public String memo= "";
 
     //validity check
     public String timeValidPattern = "^2\\d\\d\\d-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])_([0-1][0-9]|2[0-3]):[0-5][0-9]$"; //checks the formats of created time
@@ -22,6 +22,13 @@ class Bookmark{
 
 
     //constructor
+    public Bookmark(){
+        this.bookMarkName = "";
+        this.createdTime = "";
+        this.groupName = "";
+        this.memo = "";
+        this.url = "";
+    };
 
     public Bookmark(String url){
         LocalDateTime now = LocalDateTime.now();
@@ -63,13 +70,14 @@ class BookmarkList{
     public void bookmarkToFile(){};
 
     //constructor
-    public BookmarkList(String bookmarkFileName){}
+    public BookmarkList(){}
 
 }
 
 //class that reads file and makes bookmark and bookmark list
 class FileReader{
     LineChecker lineChecker = new LineChecker();
+    String[] BookMarkInfo = new String[5]; //name, time, url, groupname, memo
 
     void lineParser(String str){
         String[] temp = str.split(";|,");
@@ -79,18 +87,36 @@ class FileReader{
             }
             System.out.println("\n");*/
 
-            //make bookmark
-
+            //make bookmark info array
+            for(int i = 0 ; i < 5; i++){
+                if(!temp[i].isEmpty() | !temp[i].isBlank()){ //if content exists
+                    this.BookMarkInfo[i] = temp[i];
+                }
+            }
 
         }else{
             System.out.println("invalid input");
         }
+    }
 
+    Bookmark instanceCreator(){
+        Bookmark temp = new Bookmark();
 
-        //checking process
+        temp.bookMarkName = this.BookMarkInfo[0];
+        temp.createdTime = this.BookMarkInfo[1];
+        temp.url = this.BookMarkInfo[2];
+        temp.groupName = this.BookMarkInfo[3];
+        temp.memo = this.BookMarkInfo[4];
 
+        return temp;
+    }
+
+    BookmarkList listCreator(String str){
+        BookmarkList tempList = new BookmarkList(str);
 
     }
+
+
 }
 
 //class that checks validity of each line by using url pattern, and time pattern
@@ -158,8 +184,7 @@ class LineChecker{
 
 class Test{
     public static void main(String[] args) {
-        Bookmark bookmark = new Bookmark("http://asdf");
-
+        BookmarkList bookmarkList = new BookmarkList();
         File file = new File("/Users/jasonahn/IdeaProjects/SoftwareProject_BookMark/src/af.txt");
         FileReader filereader = new FileReader();
 

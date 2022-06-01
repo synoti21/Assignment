@@ -130,7 +130,7 @@ class BookmarkList{
 
 
     public void bookmarkToFile() {
-        File file = new File("/Users/jasonahn/IdeaProjects/SoftwareProject_BookMark/src/af2.txt");
+        File file = new File(fileStream.getPath());
         try {
             FileWriter fileWriter = new FileWriter(file);
             PrintWriter printWriter = new PrintWriter(fileWriter);
@@ -186,6 +186,12 @@ class BookmarkList{
             }
         }
         return count;
+    }
+
+    public void printBookmarks(){
+        for(int i = 0 ; i < bookmarks.size(); i++){
+            System.out.println(this.bookmarks.get(i).url);
+        }
     }
 }
 

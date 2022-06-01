@@ -54,9 +54,15 @@ class BookmarkListTablePanel extends JPanel{  //Main panel that displays registe
         bookmarkList.mergeByGroup();
 
         //table default set
-        this.model = new DefaultTableModel();
+        this.model = new DefaultTableModel(){
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         this.model.setColumnCount(header.length);
         this.model.setColumnIdentifiers(header);
+
 
         //set each column's default size
         table = new JTable(this.model);
@@ -81,7 +87,7 @@ class BookmarkListTablePanel extends JPanel{  //Main panel that displays registe
 
         }
 
-        System.out.println("refreshed");
+        bookmarkList.printBookmarks();
 
         String currentGroup = "";
         String[] bookmarkToArrayTemp = new String[6];
@@ -139,7 +145,7 @@ class BookmarkListTablePanel extends JPanel{  //Main panel that displays registe
                             int numofMember = bookmarkList.countGroup(selectedGroup);
                             for(int i =0; i < numofMember; i++){
                                 tempArray = bookmarkList.bookmarks.get(targetIndex+i).bookmarkToArray();
-                                model.insertRow(table.getSelectedRow()+1,tempArray);
+                                model.insertRow(table.getSelectedRow()+1+i,tempArray);
                             }
                             table.setValueAt("V",table.getSelectedRow(),0);
 
@@ -196,6 +202,32 @@ class BookmarkListButtonPanel extends JPanel{ //Sub Panel that contains the butt
             @Override
             public void actionPerformed(ActionEvent e) {
                 int selectedRowIndex = tablePanel.table.getSelectedRow();
+
+                String targetGroup = tablePanel.model.getValueAt(selectedRowIndex,1).toString();
+
+                int numOfTargetMember = bookmarkList.countGroup(targetGroup);
+                int indexOfTargetGroup = bookmarkList.indexOfGroupName(targetGroup);
+
+                if(tablePanel.model.getValueAt(selectedRowIndex,0).equals(">")){
+                    //delete all members of group
+                    for(int i = 0; i < numOfTargetMember; i++){
+                        bookmarkList.bookmarks.remove(indexOfTargetGroup);
+                    }
+                    //remove data from table
+                    tablePanel.model.removeRow(selectedRowIndex);
+                }else if(tablePanel.model.getValueAt(selectedRowIndex,0).equals("V")){
+                    //delete all members of group
+                    for(int i = 0; i < numOfTargetMember; i++){
+                        bookmarkList.bookmarks.remove(indexOfTargetGroup);
+                    }
+                    //remove data from table
+                    for(int i =0 ; i < numOfTargetMember+1; i++){
+                        tablePanel.model.removeRow(selectedRowIndex);
+                    }
+
+                }else{
+                }
+                bookmarkList.printBookmarks();
             }
         });
 
@@ -215,11 +247,12 @@ class BookmarkListButtonPanel extends JPanel{ //Sub Panel that contains the butt
             }
         });
 
-        //DELETE
-        jbtDelete.addActionListener(new ActionListener() {
+        //SAVE
+        jbtSave.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                bookmarkList.bookmarkToFile();
+                JOptionPane.showMessageDialog(null,"Bookmark Saved");
             }
         });
     }
@@ -309,7 +342,7 @@ class BookmarkInfo extends JFrame {  //Adding new Bookmark
                         for(int i = 0; i < tablePanel.model.getRowCount(); i++){
                             if(tablePanel.model.getValueAt(i,1).equals(tempBookmark.groupName)){ //table에 있으면
                                 if(tablePanel.model.getValueAt(i,0).equals("V")){
-                                    tablePanel.model.insertRow(tablePanel.table.getSelectedRow()+1,temp);
+                                    tablePanel.model.insertRow(i+bookmarkList.countGroup(tempBookmark.groupName),temp);
                                     bookmarkList.mergeByGroup();
                                     break;
                                 }
@@ -329,6 +362,8 @@ class BookmarkInfo extends JFrame {  //Adding new Bookmark
                         }
 
                     }
+                    bookmarkList.printBookmarks();
+
                     dispose();
                 }catch(Exception ex){
                     JOptionPane.showMessageDialog(null,"정확한 URL을 입력해주세요");

@@ -99,14 +99,7 @@ class BookmarkList{
     };
 
     //new Method
-    public int indexOfGroupName(String targetGroup){
-        for(int i = 0; i < bookmarks.size(); i++){
-            if(targetGroup.equals(bookmarks.get(i).groupName)){
-                return i;
-            }
-        }
-        return -1;
-    }
+
 
 
     public void mergeByGroup(){
@@ -188,10 +181,20 @@ class BookmarkList{
         return count;
     }
 
+    public int indexOfGroupName(String targetGroup){
+        for(int i = 0; i < bookmarks.size(); i++){
+            if(targetGroup.equals(bookmarks.get(i).groupName)){
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public void printBookmarks(){
         for(int i = 0 ; i < bookmarks.size(); i++){
             System.out.println(this.bookmarks.get(i).url);
         }
+        System.out.println("-----");
     }
 }
 

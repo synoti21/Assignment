@@ -5,7 +5,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.Array;
 import java.net.URL;
+import java.util.ArrayList;
 
 
 //Main Frame
@@ -50,6 +52,28 @@ class BookmarkListTablePanel extends JPanel{  //Main panel that displays registe
     /*public static void refreshTable(BookmarkList bookmarkList, DefaultTableModel model) throws Exception{
 
     }*/
+
+    public int getRealIndexOfBookmark(BookmarkList bookmarkList){
+        int selectedRowIndex = table.getSelectedRow();
+        int realIndex = selectedRowIndex;
+        for(int i = 0 ; i < selectedRowIndex; i++){
+            if(model.getValueAt(i,3).toString().isEmpty()){ // recognizes group mark
+                System.out.println("Group Found in row : " + i);
+
+                String groupForIndexing = model.getValueAt(i,1).toString(); //counting members of group
+                if(model.getValueAt(i,0).toString().equals(">")){ //counting opened
+                    realIndex += (bookmarkList.countGroup(groupForIndexing) -1);
+                    System.out.println("Minus Group" + (bookmarkList.countGroup(groupForIndexing) -1));
+                }else{ //counting closed
+                    realIndex -= 1;
+                    System.out.println("Mi" + (-1));
+
+                }
+            }
+        }
+        return realIndex;
+    }
+
     public BookmarkListTablePanel(BookmarkList bookmarkList) throws Exception {
         bookmarkList.mergeByGroup();
 
@@ -63,6 +87,7 @@ class BookmarkListTablePanel extends JPanel{  //Main panel that displays registe
         this.model.setColumnCount(header.length);
         this.model.setColumnIdentifiers(header);
 
+        //get real index of selected row
 
         //set each column's default size
         table = new JTable(this.model);
@@ -171,6 +196,8 @@ class BookmarkListButtonPanel extends JPanel{ //Sub Panel that contains the butt
     JButton jbtDown;
     JButton jbtSave;
 
+
+
     BookmarkListButtonPanel(BookmarkList bookmarkList, BookmarkListTablePanel tablePanel){
         setLayout(new GridLayout(5,1));
         //setBackground(Color.blue);
@@ -225,7 +252,31 @@ class BookmarkListButtonPanel extends JPanel{ //Sub Panel that contains the butt
                         tablePanel.model.removeRow(selectedRowIndex);
                     }
 
-                }else{
+                }else{ //deleting only bookmark => getting real index of selected Bookmark
+                    int realIndex = tablePanel.getRealIndexOfBookmark(bookmarkList);
+
+                    //DEBUG
+                    //System.out.println("Selected Row : " + selectedRowIndex);
+                    //System.out.println("Real Index : " + realIndex);
+
+                    tablePanel.model.removeRow(selectedRowIndex);
+                    bookmarkList.bookmarks.remove(realIndex);
+
+
+                    //DEBUG
+                    /*System.out.println(tablePanel.model.getValueAt(selectedRowIndex-1,0).toString() //if group is opened,
+                            .equals("V"));
+                    System.out.println(bookmarkList.countGroup(tablePanel.model.getValueAt(selectedRowIndex-1,1).toString()));*/
+
+
+                    if(selectedRowIndex > 0 && tablePanel.model.getValueAt(selectedRowIndex-1,0).toString() //if group is opened,
+                            .equals("V") &&
+                    bookmarkList.countGroup(tablePanel.model.getValueAt(selectedRowIndex-1,1).toString()) <=0
+                    ){
+                        //and there's no group member after deleting selected Bookmark,
+                        tablePanel.model.removeRow(selectedRowIndex-1); //delete group mark
+                    }
+
                 }
                 bookmarkList.printBookmarks();
             }
@@ -233,18 +284,186 @@ class BookmarkListButtonPanel extends JPanel{ //Sub Panel that contains the butt
 
         //UP
         jbtUp.addActionListener(new ActionListener() {
+
+
+            public void moveUpTable(int selectedIndex){
+                tablePanel.model.moveRow(selectedIndex,selectedIndex,selectedIndex-1);
+            }
+
             @Override
             public void actionPerformed(ActionEvent e) {
+                int selectedIndex = tablePanel.table.getSelectedRow();
+                int realIndex = tablePanel.getRealIndexOfBookmark(bookmarkList);
+                //맨위가 아닐 경우에만 작동
+                if(selectedIndex > 0){
+                    //up할 대상이 그룹이고 열린(open)상태일 경우 -> 경고 메시지
+                    if(tablePanel.model.getValueAt(selectedIndex,0).toString().equals("V")){
+                        System.out.println("Group is opened");
+                    }//up할 대상이 그룹 표시 행이고 닫힌 상태일 경우 -> 2가지 경우로 나뉘어 작동
+                    else if(tablePanel.model.getValueAt(selectedIndex,0).toString().equals(">")){
+                        String selectedGroup = tablePanel.model.getValueAt(selectedIndex,1).toString();
+                        // 그 위가 단일 북마크이면서 그룹 이름이 없을 경우*****
+                        if(tablePanel.model.getValueAt(selectedIndex-1,0).toString().isEmpty()
+                        && tablePanel.model.getValueAt(selectedIndex-1,1).toString().isEmpty()){
+                            Bookmark temp = bookmarkList.bookmarks.get(realIndex-1); //그 위 북마크를 임시로 제거한다.
+                            bookmarkList.bookmarks.remove(realIndex-1);
+                            bookmarkList.bookmarks.add(realIndex+bookmarkList.countGroup(selectedGroup)-1,temp);
+                            moveUpTable(selectedIndex);
+                            System.out.println("dfd");
 
+                        }// 그 위가 그룹이며, 닫힌 상태 일경우*******
+                        else if(tablePanel.model.getValueAt(selectedIndex-1,0).toString().equals(">")){
+                            ArrayList<Bookmark> tempArray = new ArrayList<Bookmark>();
+                            String upperGroup = tablePanel.model.getValueAt(selectedIndex-1,1).toString();
+                            int countOfSelectedGroup = bookmarkList.countGroup(selectedGroup);
+
+                            for(int i = 0; i < countOfSelectedGroup; i++){
+                                tempArray.add(bookmarkList.bookmarks.get(realIndex));
+                                System.out.println("selected Group : " + selectedGroup);
+                                System.out.println("selected Group count: " + bookmarkList.countGroup(selectedGroup));
+
+                                System.out.println("moved : "+bookmarkList.bookmarks.get(realIndex).url);
+                                bookmarkList.bookmarks.remove(realIndex);
+
+                            }
+                            bookmarkList.bookmarks.addAll(realIndex-bookmarkList.countGroup(upperGroup),tempArray);
+                            moveUpTable(selectedIndex);
+
+                        }else{//열리면 난입 금지 작동 X
+                            System.out.println("upper Group is opened");
+                        }
+                    }else{//up할 대상이 단일 북마크일 경우
+                        //up할 대상이 그룹 없는 북마크일 경우
+                        if(tablePanel.model.getValueAt(selectedIndex,1).toString().isEmpty()){
+                            //그 위가 단일 북마크일 경우 -> 동작*
+                            if(tablePanel.model.getValueAt(selectedIndex-1,1).toString().isEmpty()){
+                                Bookmark temp = bookmarkList.bookmarks.get(realIndex);
+                                bookmarkList.bookmarks.remove(realIndex);
+                                bookmarkList.bookmarks.add(realIndex-1,temp);
+                                moveUpTable(selectedIndex);
+
+                            }else{ //그 위가 그룹명이 있는 경우 => 그룹 있는 단일 북마크이거나, 그룹 표시 행일 수 있다.
+                                if(tablePanel.model.getValueAt(selectedIndex-1,0).toString().isEmpty()){
+                                    //그 위가 그룹은 적혀있는데 >또는 V가 없을 경우 => 열린 그룹안에 있는 북마크이므로 난입 금지
+                                    System.out.println("opened group");
+                                }else{ //그 위가 닫힌 그룹이면 동작*****
+                                    String upperGroup = tablePanel.model.getValueAt(selectedIndex-1,1).toString();
+                                    Bookmark temp = bookmarkList.bookmarks.get(realIndex);
+                                    bookmarkList.bookmarks.remove(realIndex);
+                                    bookmarkList.bookmarks.add(realIndex-bookmarkList.countGroup(upperGroup),temp);
+                                    moveUpTable(selectedIndex);
+                                }
+                            }
+                        }else{ //up할 대상이 그룹 있는 북마크일 경우 -> 열린 그룹(V)안에 있는 북마크일경우, 그 안에서 움직여야한다.
+                            //그 위에 url이 안적혀있으면 그룹 표시 행, 곧 상한선 이므로 동작 금지
+                            if(tablePanel.model.getValueAt(selectedIndex-1,3).toString().isEmpty()){
+                                System.out.println("그룹 밖으로 나갈 수 없습니다.");
+                            }else{ //안쪽이므로 동작*
+                                Bookmark temp = bookmarkList.bookmarks.get(realIndex);
+                                bookmarkList.bookmarks.remove(realIndex);
+                                bookmarkList.bookmarks.add(realIndex-1,temp);
+                                moveUpTable(selectedIndex);
+                            }
+
+                        }
+                    }
+                }else{ //맨위일 경우
+                    System.out.println("Top bookmark");
+                }
+                bookmarkList.printBookmarks();
             }
         });
 
         //DOWN
         jbtDown.addActionListener(new ActionListener() {
+
+            public void moveDownTable(int selectedIndex){
+                tablePanel.model.moveRow(selectedIndex,selectedIndex,selectedIndex+1);
+            }
             @Override
             public void actionPerformed(ActionEvent e) {
+                int selectedIndex = tablePanel.table.getSelectedRow();
+                int realIndex = tablePanel.getRealIndexOfBookmark(bookmarkList);
+                //맨 아래가 아닐 경우에만 작동
+                if(selectedIndex < tablePanel.model.getRowCount()-1){
+                    //down할 대상이 그룹이고 열린(open)상태일 경우 -> 경고 메시지
+                    if(tablePanel.model.getValueAt(selectedIndex,0).toString().equals("V")){
+                        System.out.println("Group is opened");
+                    }//down할 대상이 그룹 표시 행이고 닫힌 상태일 경우 -> 2가지 경우로 나뉘어 작동
+                    else if(tablePanel.model.getValueAt(selectedIndex,0).toString().equals(">")){
+                        String selectedGroup = tablePanel.model.getValueAt(selectedIndex,1).toString();
+                        // 그 아래가 단일 북마크이면서 그룹 이름이 없을 경우*****
+                        if(tablePanel.model.getValueAt(selectedIndex+1,0).toString().isEmpty()
+                                && tablePanel.model.getValueAt(selectedIndex+1,1).toString().isEmpty()){
+                            Bookmark temp = bookmarkList.bookmarks.get(realIndex+bookmarkList.countGroup(selectedGroup)); //그 위 북마크를 임시로 제거한다.
+                            bookmarkList.bookmarks.remove(realIndex+bookmarkList.countGroup(selectedGroup));
+                            bookmarkList.bookmarks.add(realIndex,temp);
+                            moveDownTable(selectedIndex);
+                            System.out.println("dfd");
 
+                        }// 그 아래가 그룹이며, 닫힌 상태 일경우*******
+                        else if(tablePanel.model.getValueAt(selectedIndex+1,0).toString().equals(">")){
+                            ArrayList<Bookmark> tempArray = new ArrayList<Bookmark>();
+                            String lowerGroup = tablePanel.model.getValueAt(selectedIndex+1,1).toString();
+                            int countOfSelectedGroup = bookmarkList.countGroup(selectedGroup);
+
+                            for(int i = 0; i < countOfSelectedGroup; i++){
+                                tempArray.add(bookmarkList.bookmarks.get(realIndex));
+                                System.out.println("selected Group : " + selectedGroup);
+                                System.out.println("selected Group count: " + bookmarkList.countGroup(selectedGroup));
+
+                                System.out.println("moved : "+bookmarkList.bookmarks.get(realIndex).url);
+                                bookmarkList.bookmarks.remove(realIndex);
+
+                            }
+                            bookmarkList.bookmarks.addAll(realIndex+bookmarkList.countGroup(lowerGroup),tempArray);
+                            moveDownTable(selectedIndex);
+
+                        }else{//열리면 난입 금지 작동 X
+                            System.out.println("upper Group is opened");
+                        }
+                    }else{//down할 대상이 단일 북마크일 경우
+                        //down할 대상이 그룹 없는 북마크일 경우
+                        if(tablePanel.model.getValueAt(selectedIndex,1).toString().isEmpty()){
+                            //그 아래가 단일 북마크일 경우 -> 동작*
+                            if(tablePanel.model.getValueAt(selectedIndex+1,1).toString().isEmpty()){
+                                Bookmark temp = bookmarkList.bookmarks.get(realIndex);
+                                bookmarkList.bookmarks.remove(realIndex);
+                                bookmarkList.bookmarks.add(realIndex+1,temp);
+                                moveDownTable(selectedIndex);
+
+                            }else{ //그 아래가 그룹명이 있는 경우 => 무조건 그룹 마크 행이다
+                                if(tablePanel.model.getValueAt(selectedIndex+1,0).toString().equals("V")){
+                                    //V이면 => 열린 그룹안에 있는 북마크이므로 난입 금지
+                                    System.out.println("opened group");
+                                }else{ //그 아래 닫힌 그룹이면 동작*****
+                                    String lowerGroup = tablePanel.model.getValueAt(selectedIndex+1,1).toString();
+                                    Bookmark temp = bookmarkList.bookmarks.get(realIndex);
+                                    bookmarkList.bookmarks.remove(realIndex);
+                                    bookmarkList.bookmarks.add(realIndex+bookmarkList.countGroup(lowerGroup),temp);
+                                    moveDownTable(selectedIndex);
+                                }
+                            }
+                        }else{ //down할 대상이 그룹 있는 북마크일 경우 -> 열린 그룹(V)안에 있는 북마크일경우, 그 안에서 움직여야한다.
+                            //그 아래의 북마크의 그룹명이 다르다면 경계선이다
+                            if(!tablePanel.model.getValueAt(selectedIndex,1).toString()
+                                    .equals(tablePanel.model.getValueAt(selectedIndex+1,1).toString())){
+                                System.out.println("그룹 밖으로 나갈 수 없습니다.");
+                            }else{ //안쪽이므로 동작*
+                                Bookmark temp = bookmarkList.bookmarks.get(realIndex);
+                                bookmarkList.bookmarks.remove(realIndex);
+                                bookmarkList.bookmarks.add(realIndex+1,temp);
+                                moveDownTable(selectedIndex);
+                            }
+
+                        }
+                    }
+                }else{ //맨아래일 경우
+                    System.out.println("Lowest bookmark");
+                }
+                bookmarkList.printBookmarks();
             }
+
         });
 
         //SAVE
@@ -331,7 +550,7 @@ class BookmarkInfo extends JFrame {  //Adding new Bookmark
                     tempBookmark.bookMarkName = (String)model.getValueAt(0,1);
                     tempBookmark.memo = (String)model.getValueAt(0,3);
 
-                    bookmarkList.bookmarks.add(tempBookmark);
+                    bookmarkList.bookmarks.add(tempBookmark); //일단 북마크리스트에 먼저 북마크 추가, 그룹 정렬은 나중에 할 예정
 
                     temp = tempBookmark.bookmarkToArray();
 
@@ -340,15 +559,16 @@ class BookmarkInfo extends JFrame {  //Adding new Bookmark
                         tablePanel.model.addRow(temp);
                     }else{ //있으면 다시 케이스 분류
                         for(int i = 0; i < tablePanel.model.getRowCount(); i++){
-                            if(tablePanel.model.getValueAt(i,1).equals(tempBookmark.groupName)){ //table에 있으면
-                                if(tablePanel.model.getValueAt(i,0).equals("V")){
+                            if(tablePanel.model.getValueAt(i,1).equals(tempBookmark.groupName)){ //table에 이미 group이 있으면
+                                if(tablePanel.model.getValueAt(i,0).equals("V")){ //열린 상태일경우 맨 밑에 추가
                                     tablePanel.model.insertRow(i+bookmarkList.countGroup(tempBookmark.groupName),temp);
                                     bookmarkList.mergeByGroup();
                                     break;
-                                }
+                                } //없으면 테이블은 가만히 둔다.
+                                bookmarkList.mergeByGroup();
                                 break;
                             }
-                            if(i >= tablePanel.model.getRowCount()-1){
+                            if(i >= tablePanel.model.getRowCount()-1){ //table에 없는 group이면
                                 temp[0] = ">";
                                 temp[2] = "";
                                 temp[3] = "";
@@ -359,6 +579,14 @@ class BookmarkInfo extends JFrame {  //Adding new Bookmark
                                 System.out.println("added");
                                 break;
                             }
+                        }
+                        if(tablePanel.model.getRowCount() < 1){ //if there's no data
+                            temp[0] = ">";
+                            temp[2] = "";
+                            temp[3] = "";
+                            temp[4] = "";
+                            temp[5] = "";
+                            tablePanel.model.addRow(temp);
                         }
 
                     }

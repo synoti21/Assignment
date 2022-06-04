@@ -75,7 +75,7 @@ class Bookmark{
 }
 class BookmarkList{
     //Bookmark[] bookmarks;
-    ArrayList<Bookmark> bookmarks= new ArrayList<Bookmark>();
+    private ArrayList<Bookmark> bookmarks= new ArrayList<Bookmark>();
     File fileStream;
     FileReader filereader = new FileReader();
 
@@ -84,19 +84,33 @@ class BookmarkList{
     public int numBookmarks(){
         return bookmarks.size();
     };
-    public Bookmark getBookmark(int i) throws Exception{
-        try{
-            if(i > bookmarks.size()){
-                System.out.println("Range out of Bound. Returned void bookmark");
-                return new Bookmark();
-            }else{
-                return bookmarks.get(i);
-            }
-        }catch(Exception e){
-            e.printStackTrace();
+
+    public Bookmark getBookmark(int i){
+        if(i > bookmarks.size() || i < 0){
+            System.out.println("Range out of Bound. Returned void bookmark");
+            return new Bookmark();
+        }else{
+            return bookmarks.get(i);
         }
-        return new Bookmark();
     };
+
+    public void addBookmark(int index, Bookmark bookmark){
+        bookmarks.add(index,bookmark);
+    }
+
+    public void addBookmark(Bookmark bookmark){
+        bookmarks.add(bookmark);
+    }
+
+    public void addMultipleBookmarks(int index, ArrayList<Bookmark> multipleBookmarks){
+        bookmarks.addAll(index, multipleBookmarks);
+    }
+
+    public void removeBookmark(int index){
+        bookmarks.remove(index);
+    }
+
+
 
     //new Method
 
